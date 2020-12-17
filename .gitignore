@@ -1,0 +1,8 @@
+# Default ignored files
+.idea/
+
+yolov3.weights
+yolov3.cfg
+result.mp4
+test-s.mp4
+coco.names
