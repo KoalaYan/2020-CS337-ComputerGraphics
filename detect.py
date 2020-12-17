@@ -38,7 +38,7 @@ class DTracker:
 
         self.net = cv2.dnn.readNetFromDarknet(model_config, model_weights)
 
-    def detect(self, img):
+    def detect(self, frame):
         frame_height = frame.shape[0]
         frame_width = frame.shape[1]
 
@@ -49,7 +49,7 @@ class DTracker:
         # print(max_wh, min_wh)
 
         # Preprocessing task: 1.Mean subtraction 2.Scaling by some factor
-        blob = cv2.dnn.blobFromImage(img, 1/255, (self.networkWidth, self.networkHeight), [0,0,0], 1, crop=False)
+        blob = cv2.dnn.blobFromImage(frame, 1/255, (self.networkWidth, self.networkHeight), [0,0,0], 1, crop=False)
 
         # Sets the input to the network
         self.net.setInput(blob)
@@ -123,19 +123,19 @@ class DTracker:
 
         return box_ball, box_player
 
-    def detect_track(self, img):
+    def detect_track(self, frame):
         is_detecting_ball = False
         is_detecting_player = False
         if (self.frameNumber % 5 == 0) or (not self.tracking_ok_ball):# or not self.tracking_ok_player:
-            ball_box, player_box = self.detect(img)
+            ball_box, player_box = self.detect(frame)
             # ball_box = self.detect(img)
             if ball_box is not None:
                 is_detecting_ball = True
                 self.tracker_ball = cv2.TrackerCSRT_create()
-                self.tracking_ok_ball = self.tracker_ball.init(img, tuple(ball_box))
-                self.tracking_ok_ball = self.tracker_ball.update(img)
+                self.tracking_ok_ball = self.tracker_ball.init(frame, tuple(ball_box))
+                self.tracking_ok_ball = self.tracker_ball.update(frame)
             else:
-                self.tracking_ok_ball, ball_box = self.tracker_ball.update(img)
+                self.tracking_ok_ball, ball_box = self.tracker_ball.update(frame)
             if player_box is not None:
                 is_detecting_player = True
                 self.tracker_player = cv2.TrackerCSRT_create()
@@ -144,7 +144,7 @@ class DTracker:
             else:
                 self.tracking_ok_player, player_box = self.tracker_player.update(frame)
         else:
-            self.tracking_ok_ball, ball_box = self.tracker_ball.update(img)
+            self.tracking_ok_ball, ball_box = self.tracker_ball.update(frame)
             self.tracking_ok_player, player_box = self.tracker_player.update(frame)
 
         self.frameNumber += 1
@@ -179,35 +179,35 @@ if __name__ == "__main__":
     # Define the codec and create VideoWriter object.
     out = cv2.VideoWriter(resultFileName, cv2.VideoWriter_fourcc('M','J','P','G'), fps, (frame_width, frame_height))
 
-    flag, frame = cap.read()
+    flag, img = cap.read()
     while flag:
-        ball_box, player_box = DT.detect_track(frame)
+        ball_box, player_box = DT.detect_track(img)
         # ball_box = DT.detect_track(frame)
-        result = frame
+        result = img
 
         left = int(ball_box[0])
         top = int(ball_box[1])
         width = int(ball_box[2])
         height = int(ball_box[3])
         if ball_box[4]:
-            result = cv2.rectangle(frame, (left, top), (left + width, top + height), (0, 0, 255), 3)
+            result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
         else:
-            result = cv2.rectangle(frame, (left, top), (left + width, top + height), (255, 178, 50), 3)
+            result = cv2.rectangle(img, (left, top), (left + width, top + height), (255, 178, 50), 3)
 
         left = int(player_box[0])
         top = int(player_box[1])
         width = int(player_box[2])
         height = int(player_box[3])
         if player_box[4]:
-            result = cv2.rectangle(frame, (left, top), (left + width, top + height), (0, 0, 255), 3)
+            result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
         else:
-            result = cv2.rectangle(frame, (left, top), (left + width, top + height), (255, 178, 50), 3)
+            result = cv2.rectangle(img, (left, top), (left + width, top + height), (255, 178, 50), 3)
         out.write(np.uint8(result))
         cv2.imshow('result', result)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-        flag, frame = cap.read()
+        flag, img = cap.read()
 
     cap.release()
     cv2.destroyAllWindows()
