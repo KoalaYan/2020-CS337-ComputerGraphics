@@ -123,7 +123,7 @@ class DTracker:
     #     return ball_box, player_box
 
 testFileName = "1.mp4"
-resultFileName = "field.mp4"
+resultFileName = "field-1.mp4"
 
 if __name__ == "__main__":
     lt = [323,398]
@@ -157,17 +157,19 @@ if __name__ == "__main__":
             height = int(box[3])
             poi = [left, top+height]
             if judgeIn.isin_multipolygon(poi,vertex_lst, contain_boundary=True):
-                result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
+                # result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
                 point_list.append(poi)
+                # print(poi)
             # if box[4]:
             #     result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
             # else:
             #     result = cv2.rectangle(img, (left, top), (left + width, top + height), (255, 178, 50), 3)
 
-        result = persp.persp(img, point_list)
-        # result, point_list = persp.persp(img, point_list)
-        # for poi in point_list:
-        #     result = cv2.rectangle(img, (poi[0], poi[1]), (poi[0]+4, poi[1]+4), (0, 0, 255), 3)
+        # result = persp.persp(img, point_list)
+        result, point_list = persp.persp(img, point_list)
+        for poi in point_list:
+            # print(poi)
+            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+4, poi[1]+4), (0, 0, 255), 3)
         out.write(np.uint8(result))
         cv2.imshow('result', result)
 

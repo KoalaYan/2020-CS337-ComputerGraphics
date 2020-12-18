@@ -20,6 +20,28 @@ def get_points_tran(points_list, M):
         i[6],i[7] = cvt_pos([i[6],i[7]],M)
     return points_list
 
+def pointPersp(point_list, M):
+    res_list = []
+    for poi in point_list:
+        # a = float(poi[0]*M[0][0] + poi[1]*M[1][0] + M[2][0])
+        # b = float(poi[0]*M[0][2] + poi[1]*M[1][2] + M[2][2])
+        a = float(poi[0]*M[0][0] + poi[1]*M[0][1] + M[0][2])
+        b = float(poi[0]*M[2][0] + poi[1]*M[2][1] + M[2][2])
+
+        x = a / b
+        # print(a,b)
+        x = int(x)
+        # a = float(poi[0]*M[1][0] + poi[1]*M[1][1] + M[1][2])
+        # b = float(poi[0]*M[0][2] + poi[1]*M[1][2] + M[2][2])
+        a = float(poi[0]*M[1][0] + poi[1]*M[1][1] + M[1][2])
+        b = float(poi[0]*M[2][0] + poi[1]*M[2][1] + M[2][2])
+        y = a / b
+        y = int(y)
+        # print(a,b)
+        res_list.append([x,y])
+    return res_list
+
+
 def persp(img, total_points_list):
     lt = [323,398]
     rt = [1593,408]
@@ -31,9 +53,9 @@ def persp(img, total_points_list):
     point1 = np.array([lt,rt,rd,ld],dtype = "float32")
     point2 = np.array([[0,0],[w-1,0],[w,h],[0,h]],dtype = "float32")
     M = cv2.getPerspectiveTransform(point1,point2)
-
+    # print(M)
     out_img = cv2.warpPerspective(img,M,(w,h))
 
-    # total_points_list = get_points_tran(total_points_list, M)
+    total_points_list = pointPersp(total_points_list, M)
 
-    return out_img# , total_points_list
+    return out_img, total_points_list
