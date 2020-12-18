@@ -30,8 +30,8 @@ class DTracker:
         self.net = None
 
         classes_file = "./coco.names"
-        model_config = "yolov3.cfg"
-        model_weights = "yolov3.weights"
+        model_config = "yolov4.cfg"
+        model_weights = "yolov4.weights"
 
         with open(classes_file, 'rt') as f:
             self.classes = f.read().rstrip('\n').rsplit('\n')
@@ -164,7 +164,7 @@ class DTracker:
         return ball_box, player_box
 
 testFileName = "test-s.mp4"
-resultFileName = "result.mp4"
+resultFileName = "result_1.mp4"
 
 if __name__ == "__main__":
     DT = DTracker()

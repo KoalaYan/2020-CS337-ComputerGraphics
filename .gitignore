@@ -3,6 +3,10 @@
 
 yolov3.weights
 yolov3.cfg
-result.mp4
-test-s.mp4
+yolov4.weights
+yolov4.cfg
+*.jpg
+*.png
+*.avi
+*.mp4
 coco.names
