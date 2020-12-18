@@ -9,4 +9,5 @@ yolov4.cfg
 *.png
 *.avi
 *.mp4
+*.bmp
 coco.names

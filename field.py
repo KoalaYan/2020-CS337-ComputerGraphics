@@ -24,11 +24,7 @@ out = cv2.VideoWriter(resultFileName, cv2.VideoWriter_fourcc('M','J','P','G'), f
 
 #Read the video frame by frame
 while success:
-    #converting into hsv image
-    hsv = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
-    #green range
-    lower_green = np.array([40,40, 40])
-    upper_green = np.array([70, 255, 255])
+
     #blue range
     lower_blue = np.array([110,50,50])
     upper_blue = np.array([130,255,255])
@@ -41,6 +37,11 @@ while success:
     lower_white = np.array([0,0,0])
     upper_white = np.array([0,0,255])
 
+    #converting into hsv image
+    hsv = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
+    #green range
+    lower_green = np.array([40,40, 40])
+    upper_green = np.array([70, 255, 255])
     #Define a mask ranging from lower to uppper
     mask = cv2.inRange(hsv, lower_green, upper_green)
     #Do masking

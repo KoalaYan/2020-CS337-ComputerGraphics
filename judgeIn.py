@@ -55,4 +55,4 @@ def isin_multipolygon(poi,vertex_lst, contain_boundary=True):
 if __name__ == '__main__':
     vertex_lst = [[0,0],[1,1],[1,2],[0,2],[0,0]]
     poi = [0.5,1.75]
-    print(isinpolygon(poi,vertex_lst, contain_boundary=True))
+    print(isin_multipolygon(poi,vertex_lst, contain_boundary=True))

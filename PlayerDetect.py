@@ -4,6 +4,7 @@ import math
 import os
 import time
 import judgeIn
+import persp
 # import matplotlib.pyplot as plt
 
 class DTracker:
@@ -121,20 +122,6 @@ class DTracker:
     #
     #     return ball_box, player_box
 
-    def persp(self, img):
-        lt = [323,398]
-        rt = [1593,408]
-        ld = [0,675]
-        rd = [1910,693]
-        h = img.shape[0]
-        w = img.shape[1]
-        print(w, h)
-        point1 = np.array([lt,rt,rd,ld],dtype = "float32")
-        point2 = np.array([[0,0],[w-1,0],[w,h],[0,h]],dtype = "float32")
-        M = cv2.getPerspectiveTransform(point1,point2)
-        out_img = cv2.warpPerspective(img,M,(w,h))
-
-        return out_img
 testFileName = "1.mp4"
 resultFileName = "field.mp4"
 
@@ -161,6 +148,8 @@ if __name__ == "__main__":
         player_boxes = DT.detect(img)
         result = img
 
+        point_list = []
+
         for box in player_boxes:
             left = int(box[0])
             top = int(box[1])
@@ -169,12 +158,16 @@ if __name__ == "__main__":
             poi = [left, top+height]
             if judgeIn.isin_multipolygon(poi,vertex_lst, contain_boundary=True):
                 result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
+                point_list.append(poi)
             # if box[4]:
             #     result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
             # else:
             #     result = cv2.rectangle(img, (left, top), (left + width, top + height), (255, 178, 50), 3)
 
-        # result = DT.persp(result)
+        result = persp.persp(img, point_list)
+        # result, point_list = persp.persp(img, point_list)
+        # for poi in point_list:
+        #     result = cv2.rectangle(img, (poi[0], poi[1]), (poi[0]+4, poi[1]+4), (0, 0, 255), 3)
         out.write(np.uint8(result))
         cv2.imshow('result', result)
 
