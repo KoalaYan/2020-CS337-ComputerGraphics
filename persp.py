@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-import math
+import edgeCorner
 
 # 坐标转换核心代码如下
 def cvt_pos(pos,cvt_mat_t):
@@ -34,12 +34,22 @@ def pointPersp(point_list, M):
         res_list.append([x,y])
     return res_list
 
+def point_padding(point_list):
+    res_list = []
+    for poi in point_list:
+        x = poi[0] + 300
+        y = poi[1] + 300
+        res_list.append([x,y])
+    return res_list
+
 
 def persp(img, total_points_list):
-    lt = [323,398]
-    rt = [1593,408]
-    ld = [0,675]
-    rd = [1910,693]
+    lt, rt, rd, ld = edgeCorner.edge_detect(img)
+    img = cv2.copyMakeBorder(img,300,300,300,300,cv2.BORDER_CONSTANT,value=[0,255,0])
+    # lt = [323,398]
+    # rt = [1593,408]
+    # ld = [0,675]
+    # rd = [1910,693]
     h = img.shape[0]
     w = img.shape[1]
     print(w, h)
@@ -48,6 +58,8 @@ def persp(img, total_points_list):
     M = cv2.getPerspectiveTransform(point1,point2)
     # print(M)
     out_img = cv2.warpPerspective(img,M,(w,h))
+
+    total_points_list = point_padding(total_points_list)
 
     total_points_list = pointPersp(total_points_list, M)
 

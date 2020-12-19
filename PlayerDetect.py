@@ -169,9 +169,11 @@ if __name__ == "__main__":
         result, point_list = persp.persp(img, point_list)
         for poi in point_list:
             # print(poi)
-            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+4, poi[1]+4), (0, 0, 255), 3)
-        out.write(np.uint8(result))
+            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 5)
+        # out.write(np.uint8(result))
         cv2.imshow('result', result)
+        cv2.imwrite('res-test.jpg', result)
+        break
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
