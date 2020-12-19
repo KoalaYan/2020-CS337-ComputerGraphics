@@ -44,7 +44,7 @@ def point_padding(point_list):
 
 
 def persp(img, total_points_list):
-    lt, rt, rd, ld = edgeCorner.edge_detect(img)
+    lt, rt, rd, ld = edgeCorner.corner_detect(img)
     img = cv2.copyMakeBorder(img,300,300,300,300,cv2.BORDER_CONSTANT,value=[0,255,0])
     # lt = [323,398]
     # rt = [1593,408]

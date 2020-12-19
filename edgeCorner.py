@@ -46,15 +46,12 @@ def img_masked(image):
     res = cv2.bitwise_and(image, image, mask=img_mask)
     return  res
 
-def cal_crossPoint(x1, y1, x2, y2, x3, y3, x4, y4):
-    k1 = (y2 - y1) / (x2 - x1)
-    k2 = (y3 - y4) / (x3 - x4)
-    x = int(((k1 * x1 - k2 * x3) + y3 - y1) / (k1 - k2))
-    y = int(k1 * (x - x1) + y1)
-    return [x, y]
+def cal_crossPoint(A1, b1, A2, b2):
+    x = (b2-b1)/(A1-A2)
+    y = A1*x+b1
+    return [int(x), int(y)]
 
-
-def edge_detect(image):
+def horizon_edge_points(image):
     original_img = img_masked(image)
 
     # canny(): edge detection
@@ -63,72 +60,111 @@ def edge_detect(image):
 
     # padding
     image = cv2.copyMakeBorder(canny,300,300,300,300,cv2.BORDER_CONSTANT,value=[0,255,0])
-    print("Origin size:", canny.shape)
-    print("Expanded size:", image.shape)
 
-
+    top_list = []
+    down_list = []
     # detect point on horizontal boundaries
-    detect_x1 = int(image.shape[1] / 3)
-    detect_x2 = int((image.shape[1] * 2) / 3)
-    # detect point on vertical boundaries
-    detect_y1 = int(image.shape[0] / 2)
-    detect_y2 = int((image.shape[0] * 9) / 20)
-    # horizontal boundaries detection
-    y1_max = 0; y1_min = image.shape[0]
-    y2_max = 0; y2_min = image.shape[0]
-    for i in range (0, image.shape[0], 1):
-        pixel = int(image[i][detect_x1])
-        if pixel == 255:
-            # pixel is white
-            if y1_max < i:
-                y1_max = i
-            if y1_min > i:
-                y1_min = i
-        pixel = image[i][detect_x2]
-        if pixel == 255:
-            if y2_max < i:
-                y2_max = i
-            if y2_min > i:
-                y2_min = i
-    # vertical boundaries detection
-    x1_max = 0; x1_min = image.shape[1]
-    x2_max = 0; x2_min = image.shape[1]
-    for i in range (0, image.shape[1], 1):
-        pixel = int(image[detect_y1][i])
-        if pixel == 255:
-            if x1_max < i:
-                x1_max = i
-            if x1_min > i:
-                x1_min = i
-        pixel = int(image[detect_y2][i])
-        if pixel == 255:
-            if x2_max < i:
-                x2_max = i
-            if x2_min > i:
-                x2_min = i
+    x1 = int(image.shape[1] / 3)
+    x2 = int((image.shape[1] * 2) / 3)
+    for i in range(x1, x2):
+        y_max = 0; y_min = image.shape[0]
+        for j in range(0,image.shape[0]):
+            pixel = int(image[j][i])
+            if pixel == 255:
+                # pixel is white
+                if y_max < j:
+                    y_max = j
+                if y_min > j:
+                    y_min = j
+        top_list.append([i,y_min])
+        down_list.append([i,y_max])
 
-    # Calculation of edge linear function and find the intersection point
-    # (detect_x1, y1_max) - (detect_x2, y2_max) down
-    # (detect_x1, y1_min) - (detect_x2, y2_min) top
-    # (x1_max, detect_y1) - (x2_max, detect_y2) right
-    # (x1_min, detect_y1) - (x2_min, detect_y2) left
+    return top_list, down_list
+
+
+def vertical_edge_points(image, top, down):
+    original_img = img_masked(image)
+
+    # canny(): edge detection
+    img1 = cv2.GaussianBlur(original_img, (3, 3), 0)
+    canny = cv2.Canny(img1, 50, 150)
+
+    # padding
+    image = cv2.copyMakeBorder(canny,300,300,300,300,cv2.BORDER_CONSTANT,value=[0,255,0])
+
+    left_list = []
+    right_list = []
+    # detect point on horizontal boundaries
+    # print(top, down)
+    y1 = int(top+(down-top)/3)
+    y2 = int(top+(down-top)/2)
+    # print(y1, y2)
+    for i in range(y1, y2):
+        x_max = 0; x_min = image.shape[1]
+        for j in range(0,image.shape[1]):
+            pixel = int(image[i][j])
+            if pixel == 255:
+                # pixel is white
+                if x_max < j:
+                    x_max = j
+                if x_min > j:
+                    x_min = j
+        left_list.append([x_min, i])
+        right_list.append([x_max, i])
+
+    # print(left_list)
+    return left_list, right_list
+
+
+def linear_fit(point_list):
+    n = len(point_list)
+    # Calculate coefficients for normal equations based on dataset
+    u = 0
+    v = 0
+    w = 0
+    z = 0
+    for poi in point_list:
+        u = u + poi[0]
+        v = v + poi[1]
+        w = w + poi[0]**2
+        z = z + poi[0]*poi[1]
+
+    # Set up normal equations in matrix form
+    A = np.array([[n, u], [u, w]])
+    b = np.array([[v, z]]).transpose()
+
+    x = np.linalg.solve(A,b)
+    # print(x)
+    return x
+
+
+def corner_detect(image):
+    top_list, down_list = horizon_edge_points(image)
+
+    top = linear_fit(top_list)
+    down = linear_fit(down_list)
+
+    left_list, right_list = vertical_edge_points(image, top[0], down[0])
+
+    left = linear_fit(left_list)
+    right = linear_fit(right_list)
 
     # rd
-    rd = cal_crossPoint(detect_x1, y1_max, detect_x2, y2_max, x1_max, detect_y1, x2_max, detect_y2)
+    rd = cal_crossPoint(right[1], right[0], down[1], down[0])
     # ld
-    ld = cal_crossPoint(detect_x1, y1_max, detect_x2, y2_max, x1_min, detect_y1, x2_min, detect_y2)
+    ld = cal_crossPoint(left[1], left[0], down[1], down[0])
     # rt
-    rt = cal_crossPoint(detect_x1, y1_min, detect_x2, y2_min, x1_max, detect_y1, x2_max, detect_y2)
+    rt = cal_crossPoint(right[1], right[0], top[1], top[0])
     # lt
-    lt = cal_crossPoint(detect_x1, y1_min, detect_x2, y2_min, x1_min, detect_y1, x2_min, detect_y2)
+    lt = cal_crossPoint(left[1], left[0], top[1], top[0])
     # print(point_1, point_2, point_3, point_4)
-
+    # print(lt, rt, rd, ld)
     return lt, rt, rd, ld# , image
 
 def main():
     image = cv2.imread("field.jpg")
 
-    edge_detect(image)
+    corner_detect(image)
 
     cv2.waitKey()
     cv2.destroyAllWindows()
