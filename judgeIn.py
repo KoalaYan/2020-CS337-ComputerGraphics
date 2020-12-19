@@ -15,29 +15,30 @@ def isintersect(poi,spoi,epoi):
     elng, elat = epoi
     if poi == spoi:
         return None
-    if slat==elat: #排除与射线平行、重合，线段首尾端点重合的情况
+    if slat==elat:
         return False
-    if slat>lat and elat>lat: #线段在射线上边
+    if slat>lat and elat>lat: # above the ray
         return False
-    if slat<lat and elat<lat: #线段在射线下边
+    if slat<lat and elat<lat: # below the ray
         return False
-    if slat==lat and elat>lat: #交点为下端点，对应spoint
+    if slat==lat and elat>lat: # lower endpoint, corresponding to spoint
         return False
-    if elat==lat and slat>lat: #交点为下端点，对应epoint
+    if elat==lat and slat>lat: # lower endpoint, corresponding to epoint
         return False
-    if slng<lng and elat<lat: #线段在射线左边
+    if slng<lng and elat<lat: # left of the ray
         return False
-    #求交点
+    # intersection
     xseg=elng-(elng-slng)*(elat-lat)/(elat-slat)
     if xseg == lng:
-        #print("点在多边形的边上")
+        # Point on the edge of the polygon
         return None
-    if xseg<lng: #交点在射线起点的左侧
+    if xseg<lng:
+        # The intersection is to the left of the beginning of the ray
         return False
-    return True  #排除上述情况之后
+    return True
 
 def isin_multipolygon(poi,vertex_lst, contain_boundary=True):
-    # 判断是否在外包矩形内，如果不在，直接返回false
+    # in the outer rectangle ? if not, return false directly
     if not isinpolygon(poi, vertex_lst, contain_boundary):
         return False
     sinsc = 0
@@ -48,11 +49,3 @@ def isin_multipolygon(poi,vertex_lst, contain_boundary=True):
         elif intersect:
             sinsc+=1
     return sinsc%2==1
-
-
-
-
-if __name__ == '__main__':
-    vertex_lst = [[0,0],[1,1],[1,2],[0,2],[0,0]]
-    poi = [0.5,1.75]
-    print(isin_multipolygon(poi,vertex_lst, contain_boundary=True))
