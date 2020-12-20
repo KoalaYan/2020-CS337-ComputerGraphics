@@ -222,7 +222,7 @@ if __name__ == "__main__":
         #     result = cv2.circle(result, (poi[0],poi[1]), point_size, point_color, thickness)
 
         out.write(np.uint8(result))
-        cv2.imshow('result', result)
+        # cv2.imshow('result', result)
         # cv2.imwrite('res-test.jpg', result)
         # break
 
