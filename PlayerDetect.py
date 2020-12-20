@@ -30,7 +30,7 @@ class DTracker:
 
         self.net = cv2.dnn.readNetFromDarknet(model_config, model_weights)
 
-
+    # Non-maximum suppression (nms) algorithm
     def nms(dets, scores_list, thresh):
         dets = np.array(dets, np.float)
         x1 = dets[:, 0]
