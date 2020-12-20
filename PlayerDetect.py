@@ -5,6 +5,7 @@ import os
 import time
 import judgeIn
 import persp
+import nms
 # import matplotlib.pyplot as plt
 
 class DTracker:
@@ -28,6 +29,38 @@ class DTracker:
             self.classes = f.read().rstrip('\n').rsplit('\n')
 
         self.net = cv2.dnn.readNetFromDarknet(model_config, model_weights)
+
+
+    def nms(dets, scores_list, thresh):
+        dets = np.array(dets, np.float)
+        x1 = dets[:, 0]
+        y1 = dets[:, 1]
+        x2 = x1 + dets[:, 2]
+        y2 = y1 + dets[:, 3]
+        scores = np.array(scores_list, np.float)
+
+        areas = (x2 - x1 + 1) * (y2 - y1 + 1) #all boxes' area
+        order = scores.argsort()[::-1] # index in score descending
+
+        keep = []
+        while order.size > 0:
+            i = order[0] # argmax score index box coordinate
+            keep.append(i)
+            xx1 = np.maximum(x1[i], x1[order[1:]])
+            yy1 = np.maximum(y1[i], y1[order[1:]])
+            xx2 = np.minimum(x2[i], x2[order[1:]])
+            yy2 = np.minimum(y2[i], y2[order[1:]]) # most score box intersect other boxes
+
+            w = np.maximum(0.0, xx2 - xx1 + 1)
+            h = np.maximum(0.0, yy2 - yy1 + 1) # height width
+            inter = w * h # total ares of other all boxes
+            ovr = inter / (areas[i] + areas[order[1:]] - inter)  #IOU: intersection/union
+
+            inds = np.where(ovr <= thresh)[0] #lower ovr, smaller intersection. Maybe another one
+            order = order[inds + 1]  #iou < threshold
+
+        return keep
+
 
     def detect(self, frame):
         self.frameNumber += 1
@@ -58,8 +91,8 @@ class DTracker:
         # Init bounding box, confidence and class
         boxes_player = []
         confidences_player = []
-        classIDs_player = []
-        centers = []
+        # classIDs_player = []
+        # centers = []
 
         for output in layerOutputs:
             for detection in output:
@@ -79,10 +112,13 @@ class DTracker:
 
                         boxes_player.append([left, top, width, height])
                         confidences_player.append(float(confidence))
-                        classIDs_player.append(classID)
-                        centers.append([center_x, center_y])
-
-        return boxes_player
+                        # classIDs_player.append(classID)
+                        # centers.append([center_x, center_y])
+        idx = nms(boxes_player, confidences_player, self.nmsThreshold)
+        res_player = []
+        for i in idx:
+            res_player.append(boxes_player[i])
+        return res_player
 
     # def detect_track(self, frame):
     #     is_detecting_ball = False
@@ -124,8 +160,10 @@ class DTracker:
     #
     #     return ball_box, player_box
 
+
+
 testFileName = "test.mp4"
-resultFileName = "persp-1.mp4"
+resultFileName = "persp-2.mp4"
 
 if __name__ == "__main__":
     lt = [323,398]
@@ -170,19 +208,20 @@ if __name__ == "__main__":
         # result = persp.persp(img, point_list)
         result, point_list = persp.persp(img, point_list)
         # print(result.shape)
-        # for poi in point_list:
-        #     # print(poi)
-        #     result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 5)
-
-        point_size = 1
-        point_color = (0, 0, 255) # BGR
-        thickness = 4 # 0/4/8
-
         for poi in point_list:
-            result = cv2.circle(result, poi, point_size, point_color, thickness)
+            # print(poi)
+            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (0, 0, 255), 3)
+        print("Player Number:",len(point_list))
+        #
+        # point_size = 1
+        # point_color = (0, 0, 255) # BGR
+        # thickness = 4 # 0/4/8
+        #
+        # for poi in point_list:
+        #     result = cv2.circle(result, (poi[0],poi[1]), point_size, point_color, thickness)
 
         out.write(np.uint8(result))
-        # cv2.imshow('result', result)
+        cv2.imshow('result', result)
         # cv2.imwrite('res-test.jpg', result)
         # break
 
