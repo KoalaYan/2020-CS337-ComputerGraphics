@@ -121,47 +121,6 @@ class DTracker:
             res_player.append(boxes_player[i])
         return res_player
 
-    # def detect_track(self, frame):
-    #     is_detecting_ball = False
-    #     is_detecting_player = False
-    #     if (self.frameNumber % 5 == 0) or (not self.tracking_ok_ball):# or not self.tracking_ok_player:
-    #         ball_box, player_box = self.detect(frame)
-    #         # ball_box = self.detect(img)
-    #         if ball_box is not None:
-    #             is_detecting_ball = True
-    #             self.tracker_ball = cv2.TrackerCSRT_create()
-    #             self.tracking_ok_ball = self.tracker_ball.init(frame, tuple(ball_box))
-    #             self.tracking_ok_ball = self.tracker_ball.update(frame)
-    #         else:
-    #             self.tracking_ok_ball, ball_box = self.tracker_ball.update(frame)
-    #         if player_box is not None:
-    #             is_detecting_player = True
-    #             self.tracker_player = cv2.TrackerCSRT_create()
-    #             self.tracking_ok_player = self.tracker_player.init(frame, tuple(player_box))
-    #             self.tracking_ok_player = self.tracker_player.update(frame)
-    #         else:
-    #             self.tracking_ok_player, player_box = self.tracker_player.update(frame)
-    #     else:
-    #         self.tracking_ok_ball, ball_box = self.tracker_ball.update(frame)
-    #         self.tracking_ok_player, player_box = self.tracker_player.update(frame)
-    #
-    #     self.frameNumber += 1
-    #
-    #     ball_box = list(ball_box)
-    #     if ball_box is not None:
-    #         ball_box.append(is_detecting_ball)
-    #     else:
-    #         ball_box = [0, 0, 0, 0, is_detecting_ball]
-    #
-    #     player_box = list(player_box)
-    #     if player_box is not None:
-    #         player_box.append(is_detecting_player)
-    #     else:
-    #         player_box = [0, 0, 0, 0, is_detecting_player]
-    #
-    #     return ball_box, player_box
-
-
 
 testFileName = "test.mp4"
 resultFileName = "persp-3.mp4"
