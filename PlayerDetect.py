@@ -30,6 +30,8 @@ class DTracker:
         self.net = cv2.dnn.readNetFromDarknet(model_config, model_weights)
 
     def detect(self, frame):
+        self.frameNumber += 1
+        print(self.frameNumber)
         frame_height = frame.shape[0]
         frame_width = frame.shape[1]
 
@@ -37,7 +39,7 @@ class DTracker:
         max_wh = int(max_wh/32)*32
         min_wh = min(frame_height, frame_width)
         min_wh = int(min_wh/32)*32
-        print(max_wh, min_wh)
+        # print(max_wh, min_wh)
 
         # Preprocessing task: 1.Mean subtraction 2.Scaling by some factor
         #blob = cv2.dnn.blobFromImage(frame, 1/255, (self.networkWidth, self.networkHeight), [0,0,0], 1, crop=False)
@@ -122,8 +124,8 @@ class DTracker:
     #
     #     return ball_box, player_box
 
-testFileName = "1.mp4"
-resultFileName = "field-1.mp4"
+testFileName = "test.mp4"
+resultFileName = "persp-1.mp4"
 
 if __name__ == "__main__":
     lt = [323,398]
@@ -167,13 +169,22 @@ if __name__ == "__main__":
 
         # result = persp.persp(img, point_list)
         result, point_list = persp.persp(img, point_list)
+        # print(result.shape)
+        # for poi in point_list:
+        #     # print(poi)
+        #     result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 5)
+
+        point_size = 1
+        point_color = (0, 0, 255) # BGR
+        thickness = 4 # 0/4/8
+
         for poi in point_list:
-            # print(poi)
-            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 5)
-        # out.write(np.uint8(result))
-        cv2.imshow('result', result)
-        cv2.imwrite('res-test.jpg', result)
-        break
+            result = cv2.circle(result, poi, point_size, point_color, thickness)
+
+        out.write(np.uint8(result))
+        # cv2.imshow('result', result)
+        # cv2.imwrite('res-test.jpg', result)
+        # break
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

@@ -43,6 +43,15 @@ def point_padding(point_list):
     return res_list
 
 
+def white_background():
+    gray0=np.zeros((1080,1920),dtype=np.uint8)
+    gray0[:,:]=255
+    gray255=gray0[:,:]
+    Img_rgb=cv2.cvtColor(gray255,cv2.COLOR_GRAY2RGB)
+
+    return Img_rgb
+
+
 def persp(img, total_points_list):
     lt, rt, rd, ld = edgeCorner.corner_detect(img)
     img = cv2.copyMakeBorder(img,300,300,300,300,cv2.BORDER_CONSTANT,value=[0,255,0])
@@ -50,17 +59,26 @@ def persp(img, total_points_list):
     # rt = [1593,408]
     # ld = [0,675]
     # rd = [1910,693]
+    img = white_background()
     h = img.shape[0]
     w = img.shape[1]
-    print(w, h)
+    # print(w, h)
     point1 = np.array([lt,rt,rd,ld],dtype = "float32")
     point2 = np.array([[0,0],[w-1,0],[w,h],[0,h]],dtype = "float32")
     M = cv2.getPerspectiveTransform(point1,point2)
     # print(M)
-    out_img = cv2.warpPerspective(img,M,(w,h))
+    # out_img = cv2.warpPerspective(img,M,(w,h))
+    out_img = img
 
     total_points_list = point_padding(total_points_list)
 
     total_points_list = pointPersp(total_points_list, M)
 
     return out_img, total_points_list
+
+def main():
+    white_background()
+
+
+if __name__ == '__main__':
+    main()
