@@ -5,7 +5,6 @@ import os
 import time
 import judgeIn
 import persp
-import nms
 # import matplotlib.pyplot as plt
 
 class DTracker:
@@ -14,7 +13,7 @@ class DTracker:
         self.frameNumber = 0
         self.objScrThreshold = 0.5 # Probability that the object is contained in the bounding box
         self.classConfThreshold = 0.5 # Probability that the object belongs to a specific class
-        self.nmsThreshold = 0.4 # Detect overlapping targets of the same or different types
+        self.nmsThreshold = 0.35 # Detect overlapping targets of the same or different types
         self.networkWidth = 416 # Width of network's input image
         self.networkHeight = 416 # Height of network's input image
 
@@ -31,7 +30,8 @@ class DTracker:
         self.net = cv2.dnn.readNetFromDarknet(model_config, model_weights)
 
     # Non-maximum suppression (nms) algorithm
-    def nms(dets, scores_list, thresh):
+    def nms(self, dets, scores_list):
+        thresh = self.nmsThreshold
         dets = np.array(dets, np.float)
         x1 = dets[:, 0]
         y1 = dets[:, 1]
@@ -54,10 +54,10 @@ class DTracker:
             w = np.maximum(0.0, xx2 - xx1 + 1)
             h = np.maximum(0.0, yy2 - yy1 + 1) # height width
             inter = w * h # total ares of other all boxes
-            ovr = inter / (areas[i] + areas[order[1:]] - inter)  #IOU: intersection/union
+            ovr = inter / (areas[i] + areas[order[1:]] - inter)  # IOU: intersection/union
 
-            inds = np.where(ovr <= thresh)[0] #lower ovr, smaller intersection. Maybe another one
-            order = order[inds + 1]  #iou < threshold
+            inds = np.where(ovr <= thresh)[0] # lower ovr, smaller intersection. Maybe another one
+            order = order[inds + 1]  # iou < threshold
 
         return keep
 
@@ -114,7 +114,8 @@ class DTracker:
                         confidences_player.append(float(confidence))
                         # classIDs_player.append(classID)
                         # centers.append([center_x, center_y])
-        idx = nms(boxes_player, confidences_player, self.nmsThreshold)
+
+        idx = self.nms(boxes_player, confidences_player)
         res_player = []
         for i in idx:
             res_player.append(boxes_player[i])
@@ -163,7 +164,7 @@ class DTracker:
 
 
 testFileName = "test.mp4"
-resultFileName = "persp-2.mp4"
+resultFileName = "persp-3.mp4"
 
 if __name__ == "__main__":
     lt = [323,398]
