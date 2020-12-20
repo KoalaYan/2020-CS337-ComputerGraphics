@@ -5,6 +5,8 @@ import os
 import time
 import judgeIn
 import persp
+import multiTracker
+import edgeCorner
 # import matplotlib.pyplot as plt
 
 class DTracker:
@@ -16,6 +18,7 @@ class DTracker:
         self.nmsThreshold = 0.35 # Detect overlapping targets of the same or different types
         self.networkWidth = 416 # Width of network's input image
         self.networkHeight = 416 # Height of network's input image
+        self.vertex_lst = []
 
         self.classes = None
         self.net = None
@@ -28,6 +31,11 @@ class DTracker:
             self.classes = f.read().rstrip('\n').rsplit('\n')
 
         self.net = cv2.dnn.readNetFromDarknet(model_config, model_weights)
+
+        # 'BOOSTING', 'MIL', 'KCF','TLD', 'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT'
+        self.trackerType = "CSRT"
+        self.multiTracker = cv2.MultiTracker_create()
+        self.isTracking = False
 
     # Non-maximum suppression (nms) algorithm
     def nms(self, dets, scores_list):
@@ -118,19 +126,46 @@ class DTracker:
         idx = self.nms(boxes_player, confidences_player)
         res_player = []
         for i in idx:
-            res_player.append(boxes_player[i])
+            # res_player.append(boxes_player[i])
+
+            box = boxes_player[i]
+            left = int(box[0])
+            top = int(box[1])
+            width = int(box[2])
+            height = int(box[3])
+            poi = [left, top+height]
+            if judgeIn.isin_multipolygon(poi, self.vertex_lst, contain_boundary=True):
+                # result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
+                res_player.append(box)
+
         return res_player
+
+
+    def detect_tracker(self, frame):
+        is_detecting = False
+        if(self.frameNumber % 5 == 0) or (not self.isTracking):
+            boxes_list = self.detect(frame)
+            if len(boxes_list) != 0:
+                is_detecting = True
+                self.multiTracker = cv2.MultiTracker_create()
+                for box in boxes_list:
+                    self.multiTracker.add(multiTracker.createTrackerByName(self.trackerType), frame, (box[0],box[1],box[2],box[3]))
+                self.isTracking = True
+            else:
+                self.isTracking, boxes_list = self.multiTracker.update(frame)
+        else:
+            self.isTracking, boxes_list = self.multiTracker.update(frame)
+            self.frameNumber += 1
+            print(self.frameNumber)
+
+        return boxes_list
 
 
 testFileName = "test.mp4"
 resultFileName = "persp-3.mp4"
 
 if __name__ == "__main__":
-    lt = [323,398]
-    rt = [1593,408]
-    ld = [0,675]
-    rd = [1910,693]
-    vertex_lst = [ld, rd, rt, lt]
+
     DT = DTracker()
 
     cap = cv2.VideoCapture(testFileName)
@@ -144,8 +179,30 @@ if __name__ == "__main__":
     out = cv2.VideoWriter(resultFileName, cv2.VideoWriter_fourcc('M','J','P','G'), fps, (frame_width, frame_height))
 
     flag, img = cap.read()
+    if flag:
+        lt, rt, rd, ld = edgeCorner.corner_detect(img)
+        # lt[0] = 0
+        # lt[1] = lt[1] - 300
+        # rt[0] = img.shape[1] - 1
+        # rt[1] = rt[1] - 300
+        # rd[0] = img.shape[1] - 1
+        # rd[1] = rd[1] - 300
+        # ld[0] = 0
+        # ld[1] = ld[1] - 300
+        lt[0] = lt[0] - 300
+        lt[1] = lt[1] - 300
+        rt[0] = rt[0] - 300
+        rt[1] = rt[1] - 300
+        rd[0] = rd[0] - 300
+        rd[1] = rd[1] - 300
+        ld[0] = ld[0] - 300
+        ld[1] = ld[1] - 300
+        # print(lt, rt, rd, ld)
+        DT.vertex_lst = [ld, rd, rt, lt]
+
     while flag:
-        player_boxes = DT.detect(img)
+        player_boxes = DT.detect_tracker(img)
+        print("Number:", len(player_boxes))
         result = img
 
         point_list = []
@@ -156,9 +213,10 @@ if __name__ == "__main__":
             width = int(box[2])
             height = int(box[3])
             poi = [left, top+height]
-            if judgeIn.isin_multipolygon(poi,vertex_lst, contain_boundary=True):
-                # result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
-                point_list.append(poi)
+            point_list.append(poi)
+            # if judgeIn.isin_multipolygon(poi, DT.vertex_lst, contain_boundary=True):
+            #     # result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
+            #     point_list.append(poi)
                 # print(poi)
             # if box[4]:
             #     result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
@@ -181,7 +239,7 @@ if __name__ == "__main__":
         #     result = cv2.circle(result, (poi[0],poi[1]), point_size, point_color, thickness)
 
         out.write(np.uint8(result))
-        # cv2.imshow('result', result)
+        cv2.imshow('result', result)
         # cv2.imwrite('res-test.jpg', result)
         # break
 
