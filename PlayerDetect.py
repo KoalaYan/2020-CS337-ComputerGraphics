@@ -7,6 +7,7 @@ import judgeIn
 import persp
 import multiTracker
 import edgeCorner
+import teamClassify
 # import matplotlib.pyplot as plt
 
 class DTracker:
@@ -162,7 +163,7 @@ class DTracker:
 
 
 testFileName = "test.mp4"
-resultFileName = "persp-3.mp4"
+resultFileName = "team-3.mp4"
 
 if __name__ == "__main__":
 
@@ -201,35 +202,48 @@ if __name__ == "__main__":
         DT.vertex_lst = [ld, rd, rt, lt]
 
     while flag:
-        player_boxes = DT.detect_tracker(img)
+        player_boxes = DT.detect(img)
+        team_list = teamClassify.teamClassify_kmeans(img, player_boxes)
         print("Number:", len(player_boxes))
         result = img
 
         point_list = []
 
-        for box in player_boxes:
+        for idx in range(len(player_boxes)):
+            box = player_boxes[idx]
             left = int(box[0])
             top = int(box[1])
             width = int(box[2])
             height = int(box[3])
             poi = [left, top+height]
             point_list.append(poi)
-            # if judgeIn.isin_multipolygon(poi, DT.vertex_lst, contain_boundary=True):
-            #     # result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
-            #     point_list.append(poi)
-                # print(poi)
-            # if box[4]:
-            #     result = cv2.rectangle(img, (left, top), (left + width, top + height), (0, 0, 255), 3)
-            # else:
-            #     result = cv2.rectangle(img, (left, top), (left + width, top + height), (255, 178, 50), 3)
 
-        # result = persp.persp(img, point_list)
-        result, point_list = persp.persp(img, point_list)
+
+            # team = team_list[idx][4]
+            # if team == 1:
+            #     result = cv2.rectangle(result, (left, top), (left + width, top + height), (0, 0, 255), 3)
+            # elif team == 0:
+            #     result = cv2.rectangle(result, (left, top), (left + width, top + height), (255, 0, 0), 3)
+            # else:
+            #     result = cv2.rectangle(result, (left, top), (left + width, top + height), (255, 0, 0), 3)
+
+
+        # result, point_list = persp.persp(img, point_list)
+
+
         # print(result.shape)
-        for poi in point_list:
+        for idx in range(0,len(point_list)):
             # print(poi)
-            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (0, 0, 255), 3)
-        print("Player Number:",len(point_list))
+            poi = point_list[idx]
+            team = team_list[idx][4]
+            if team == 1:
+                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (0, 0, 255), 3)
+            elif team == 0:
+                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (255, 0, 0), 3)
+            else:
+                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (255, 0, 0), 3)
+
+        print("Player Number:",len(player_boxes))
         #
         # point_size = 1
         # point_color = (0, 0, 255) # BGR

@@ -13,3 +13,4 @@ yolov4.cfg
 coco.names
 goturn.caffemodel
 goturn.prototxt
+__pycache__

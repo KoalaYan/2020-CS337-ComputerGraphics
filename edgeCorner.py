@@ -161,10 +161,36 @@ def corner_detect(image):
     # print(lt, rt, rd, ld)
     return lt, rt, rd, ld# , image
 
-def main():
-    image = cv2.imread("field.jpg")
 
-    corner_detect(image)
+def img_masked_rev(image):
+    #converting into hsv image
+    hsv = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
+    lower_green = np.array([40,40, 40])
+    upper_green = np.array([70, 255, 255])
+    mask = cv2.inRange(hsv, lower_green, upper_green)
+    mask = ~ mask
+    res = cv2.bitwise_and(image, image, mask=mask)
+
+    return  res
+
+
+def main():
+    # dist_list = [2, 1, 3]
+    # copy = dist_list.copy()
+    # copy.sort()
+    # print(dist_list)
+    # print(copy)
+    # idx = [0, 1, 2]
+    # for j in range(3):
+    #     for i in range(3):
+    #         if dist_list[j] == copy[i]:
+    #             idx[j] = i
+    # print(idx)
+    image = cv2.imread("field.jpg")
+    cv2.imshow("origin",image)
+    img = img_masked_rev(image)
+    cv2.imshow("revert", img)
+    # corner_detect(image)
 
     cv2.waitKey()
     cv2.destroyAllWindows()
