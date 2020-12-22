@@ -30,8 +30,8 @@ def get_colors(image, box_list):
         count = 0
         # for i in range(left, left + width, 1):
         #     for j in range(top, top + height, 1):
-        for i in range(left, left + width, 1):
-            for j in range(int(top+height/3), int(top+height*2/3), 1):
+        for i in range(left, min(left + width, image.shape[1]), 1):
+            for j in range(int(top+height/3), min(int(top+height*2/3), image.shape[0]), 1):
                 pixel = image[j][i]
                 R = int(pixel[0]); G = int(pixel[1]); B = int(pixel[2])
                 if R or G or B:
@@ -50,6 +50,11 @@ def get_colors(image, box_list):
 
         color_list.append(meanColor)
 
+    fp=open("color.log","a+",encoding="utf-8")
+    fp.write(str(color_list)+'\n')
+    fp.close()
+
+    print(color_list)
     return color_list
 
 
@@ -72,6 +77,9 @@ def get_colors_max(image, box_list):
                 pixel = image[j][i]
                 R = int(pixel[0]); G = int(pixel[1]); B = int(pixel[2])
                 if R or G or B:
+                    R = R // 4 * 4
+                    G = G // 4 * 4
+                    B = B // 4 * 4
                     pixel_list.append([R,G,B])
 
         # pixel_list.sort()
@@ -79,7 +87,13 @@ def get_colors_max(image, box_list):
         maxColor = max(pixel_list, key=pixel_list.count)
         # print(maxColor)
 
+
         color_list.append(maxColor)
+
+    fp=open("color.log","a+",encoding="utf-8")
+    fp.write(str(color_list)+'\n')
+    fp.close()
+    print(color_list)
 
     return color_list
 
@@ -197,7 +211,7 @@ class Kmeans():
                 if diff.any() < self.varepsilon:
                     # print("iteration:",i)
                     break
-            if(abs(len(clusters[0])-len(clusters[1])) < 5):
+            if(abs(len(clusters[0])-len(clusters[1])) < 4):
                 resultGood = True
 
         return self.get_cluster_labels_new(centroids, clusters, X)
@@ -205,7 +219,7 @@ class Kmeans():
 
 def teamClassify_kmeans(image, box_list):
 
-    color_list = get_colors(image, box_list)
+    color_list = get_colors_max(image, box_list)
 
     res_list = []
 
