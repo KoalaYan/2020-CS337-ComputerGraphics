@@ -74,7 +74,7 @@ class DTracker:
 
     def detect(self, frame):
         self.frameNumber += 1
-        print(self.frameNumber)
+        # print(self.frameNumber)
         frame_height = frame.shape[0]
         frame_width = frame.shape[1]
 
@@ -155,11 +155,13 @@ class DTracker:
                 self.isTracking = True
             else:
                 self.isTracking, boxes_list = self.multiTracker.update(frame)
+                boxes_list = boxes_list.tolist()
         else:
             self.isTracking, boxes_list = self.multiTracker.update(frame)
+            boxes_list = boxes_list.tolist()
             self.frameNumber += 1
-            print(self.frameNumber)
-
+            # print(self.frameNumber)
+        # print(boxes_list)
         return boxes_list
 
 
@@ -189,7 +191,7 @@ def dataLog(data_list, team_label, filename1, filename2):
     fp2.close()
 
 testFileName = "test.mp4"
-resultFileName = "final.mp4"
+resultFileName = "color.mp4"
 logFileName1 = "data_1.log"
 logFileName2 = "data_2.log"
 
@@ -228,11 +230,14 @@ if __name__ == "__main__":
         ld[1] = ld[1] - 300
         # print(lt, rt, rd, ld)
         DT.vertex_lst = [ld, rd, rt, lt]
+    team_list = []
 
     while flag:
-        player_boxes = DT.detect(img)
+        player_boxes = DT.detect_tracker(img)
+        print("Current Frame:", DT.frameNumber)
+        # if (DT.frameNumber % 5 == 0) or (len(team_list) == 0):
         team_list = teamClassify.teamClassify_kmeans(img, player_boxes)
-        print("Number:", len(player_boxes))
+        # print("Number:", len(player_boxes))
         result = img
 
         point_list = []
@@ -246,18 +251,8 @@ if __name__ == "__main__":
             poi = [left, top+height]
             point_list.append(poi)
 
-
-            # team = team_list[idx][4]
-            # if team == 1:
-            #     result = cv2.rectangle(result, (left, top), (left + width, top + height), (0, 0, 255), 3)
-            # elif team == 0:
-            #     result = cv2.rectangle(result, (left, top), (left + width, top + height), (255, 0, 0), 3)
-            # else:
-            #     result = cv2.rectangle(result, (left, top), (left + width, top + height), (255, 0, 0), 3)
-
-
         result, point_list = persp.persp(img, point_list)
-        print(len(point_list))
+        # print(len(point_list))
 
         # data_list = []
         # for idx in range(0, len(point_list)):
@@ -289,7 +284,7 @@ if __name__ == "__main__":
         #     result = cv2.circle(result, (poi[0],poi[1]), point_size, point_color, thickness)
 
         out.write(np.uint8(result))
-        # cv2.imshow('result', result)
+        cv2.imshow('result', result)
         # cv2.imwrite('res-test.jpg', result)
         # if DT.frameNumber > 10:
         #     break

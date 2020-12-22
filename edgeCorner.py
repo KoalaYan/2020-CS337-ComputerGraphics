@@ -186,10 +186,10 @@ def main():
     #         if dist_list[j] == copy[i]:
     #             idx[j] = i
     # print(idx)
-    image = cv2.imread("field.jpg")
+    image = cv2.imread("origin.jpg")
     cv2.imshow("origin",image)
-    img = img_masked_rev(image)
-    cv2.imshow("revert", img)
+    img = img_masked(image)
+    cv2.imwrite("maskGreen_img.jpg", img)
     # corner_detect(image)
 
     cv2.waitKey()
