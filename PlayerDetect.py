@@ -8,6 +8,7 @@ import persp
 import multiTracker
 import edgeCorner
 import teamClassify
+import pandas as pd
 # import matplotlib.pyplot as plt
 
 class DTracker:
@@ -162,8 +163,35 @@ class DTracker:
         return boxes_list
 
 
+def dataLog(data_list, team_label, filename1, filename2):
+    if len(data_list) != len(team_label):
+        print("Error data log!")
+        return
+    # indata = data_list
+    fp1=open(filename1,"a+",encoding="utf-8")
+    fp2=open(filename2,"a+",encoding="utf-8")
+    for idx in range(0, len(data_list)):
+        data = data_list[idx]
+        if team_label[idx] == 0:
+            fp1.write(str(data[0])+','+str(data[1]))
+            # if idx != len(data_list) - 1:
+            fp1.write('|')
+        elif team_label[idx] == 1:
+            fp2.write(str(data[0])+','+str(data[1]))
+            # if idx != len(data_list) - 1:
+            fp2.write('|')
+        else:
+            print("error log!")
+
+    fp1.write('\n')
+    fp1.close()
+    fp2.write('\n')
+    fp2.close()
+
 testFileName = "test.mp4"
-resultFileName = "team-3.mp4"
+resultFileName = "final.mp4"
+logFileName1 = "data_1.log"
+logFileName2 = "data_2.log"
 
 if __name__ == "__main__":
 
@@ -228,8 +256,16 @@ if __name__ == "__main__":
             #     result = cv2.rectangle(result, (left, top), (left + width, top + height), (255, 0, 0), 3)
 
 
-        # result, point_list = persp.persp(img, point_list)
+        result, point_list = persp.persp(img, point_list)
+        print(len(point_list))
 
+        # data_list = []
+        # for idx in range(0, len(point_list)):
+        #     poi = point_list[idx]
+        #     poi.append(team_list[idx][4])
+        #     data_list.append(poi)
+
+        dataLog(point_list, np.array(team_list,np.int)[:,4], logFileName1, logFileName2)
 
         # print(result.shape)
         for idx in range(0,len(point_list)):
@@ -237,11 +273,11 @@ if __name__ == "__main__":
             poi = point_list[idx]
             team = team_list[idx][4]
             if team == 1:
-                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (0, 0, 255), 3)
+                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 3)
             elif team == 0:
-                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (255, 0, 0), 3)
+                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
             else:
-                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+15, poi[1]+15), (255, 0, 0), 3)
+                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
 
         print("Player Number:",len(player_boxes))
         #
@@ -253,9 +289,10 @@ if __name__ == "__main__":
         #     result = cv2.circle(result, (poi[0],poi[1]), point_size, point_color, thickness)
 
         out.write(np.uint8(result))
-        cv2.imshow('result', result)
+        # cv2.imshow('result', result)
         # cv2.imwrite('res-test.jpg', result)
-        # break
+        # if DT.frameNumber > 10:
+        #     break
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

@@ -199,7 +199,7 @@ class Kmeans():
                 if diff.any() < self.varepsilon:
                     # print("iteration:",i)
                     break
-            if(abs(len(clusters[0])-len(clusters[1])) < 5):
+            if(abs(len(clusters[0])-len(clusters[1])) < 4):
                 resultGood = True
 
         return self.get_cluster_labels_new(centroids, clusters, X)

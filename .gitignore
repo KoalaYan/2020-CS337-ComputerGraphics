@@ -14,3 +14,4 @@ coco.names
 goturn.caffemodel
 goturn.prototxt
 __pycache__
+*.log
