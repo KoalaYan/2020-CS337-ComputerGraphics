@@ -123,7 +123,7 @@ class SoccerBallTracker:
 if __name__ == "__main__":
     soccer_tracker = SoccerBallTracker()
 
-    cap = cv2.VideoCapture('test-s.mp4') # soccer-ball.mp4')
+    cap = cv2.VideoCapture('test.mp4') # soccer-ball.mp4')
     fps = math.ceil(cap.get(cv2.CAP_PROP_FPS)) # get video frames per second
     print(fps)
     # get video width and height
@@ -131,7 +131,7 @@ if __name__ == "__main__":
     frame_height = int(cap.get(4))
 
     # Define the codec and create VideoWriter object.The output is stored in 'outpy.avi' file.
-    out = cv2.VideoWriter('result-s.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), fps, (frame_width, frame_height))
+    out = cv2.VideoWriter('soccer.avi', cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), fps, (frame_width, frame_height))
     fps_log = []
     while True:
         ret, frame = cap.read()
@@ -156,7 +156,7 @@ if __name__ == "__main__":
             cv2.putText(result, "FPS: " + str(round(current_fps, 2)), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.0,
                         (0, 0, 255), lineType=cv2.LINE_AA)
             out.write(np.uint8(result))
-            # cv2.imshow('frame', result)
+            cv2.imshow('frame', result)
         else:
             break
         if cv2.waitKey(1) & 0xFF == ord('q'):

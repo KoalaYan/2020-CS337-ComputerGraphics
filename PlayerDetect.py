@@ -145,7 +145,7 @@ class DTracker:
 
     def detect_tracker(self, frame):
         is_detecting = False
-        if(self.frameNumber % 5 == 0) or (not self.isTracking):
+        if(self.frameNumber % 25 == 0) or (not self.isTracking):
             boxes_list = self.detect(frame)
             if len(boxes_list) != 0:
                 is_detecting = True
@@ -166,6 +166,8 @@ class DTracker:
 
 
 def dataLog(data_list, team_label, filename1, filename2):
+    rec_team1 = []
+    rec_team2 = []
     if len(data_list) != len(team_label):
         print("Error data log!")
         return
@@ -175,10 +177,12 @@ def dataLog(data_list, team_label, filename1, filename2):
     for idx in range(0, len(data_list)):
         data = data_list[idx]
         if team_label[idx] == 0:
+            rec_team1.append(data)
             fp1.write(str(data[0])+','+str(data[1]))
             # if idx != len(data_list) - 1:
             fp1.write('|')
         elif team_label[idx] == 1:
+            rec_team2.append(data)
             fp2.write(str(data[0])+','+str(data[1]))
             # if idx != len(data_list) - 1:
             fp2.write('|')
@@ -190,8 +194,10 @@ def dataLog(data_list, team_label, filename1, filename2):
     fp2.write('\n')
     fp2.close()
 
+    return rec_team1, rec_team2
+
 testFileName = "test.mp4"
-resultFileName = "color.mp4"
+resultFileName = "team-1.mp4"
 logFileName1 = "data_1.log"
 logFileName2 = "data_2.log"
 
@@ -230,6 +236,11 @@ if __name__ == "__main__":
         ld[1] = ld[1] - 300
         # print(lt, rt, rd, ld)
         DT.vertex_lst = [ld, rd, rt, lt]
+
+    rec_team1 = []
+    rec_team2 = []
+    pre_cent1 = [0,0]
+    pre_cent2 = [0,0]
     team_list = []
 
     while flag:
@@ -260,19 +271,41 @@ if __name__ == "__main__":
         #     poi.append(team_list[idx][4])
         #     data_list.append(poi)
 
-        dataLog(point_list, np.array(team_list,np.int)[:,4], logFileName1, logFileName2)
 
-        # print(result.shape)
-        for idx in range(0,len(point_list)):
-            # print(poi)
-            poi = point_list[idx]
-            team = team_list[idx][4]
-            if team == 1:
-                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 3)
-            elif team == 0:
-                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
+
+        rec_team1, rec_team2 = dataLog(point_list, np.array(team_list,np.int)[:,4], logFileName1, logFileName2)
+
+        if DT.frameNumber % 25 != 0:
+            centroid1 = np.mean(rec_team1, axis=0)
+            centroid2 = np.mean(rec_team2, axis=0)
+            dist1 = np.sqrt(np.sum(np.square(centroid1-pre_cent1))) + np.sqrt(np.sum(np.square(centroid2-pre_cent2)))
+            dist2 = np.sqrt(np.sum(np.square(centroid1-pre_cent2))) + np.sqrt(np.sum(np.square(centroid2-pre_cent1)))
+            if dist1 > dist2:
+                rec_team1, rec_team2 = rec_team2, rec_team1
+                pre_cent1 = centroid2
+                pre_cent2 = centroid1
             else:
-                result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
+                pre_cent1 = centroid1
+                pre_cent2 = centroid2
+        else:
+            pre_cent1 = np.mean(rec_team1, axis=0)
+            pre_cent2 = np.mean(rec_team2, axis=0)
+
+        for poi in rec_team1:
+            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
+        for poi in rec_team2:
+            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 3)
+
+        # for idx in range(0,len(point_list)):
+        #     # print(poi)
+        #     poi = point_list[idx]
+        #     team = team_list[idx][4]
+        #     if team == 1:
+        #         result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 3)
+        #     elif team == 0:
+        #         result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
+        #     else:
+        #         result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
 
         print("Player Number:",len(player_boxes))
         #

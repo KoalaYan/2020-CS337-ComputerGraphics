@@ -50,11 +50,11 @@ def get_colors(image, box_list):
 
         color_list.append(meanColor)
 
-    fp=open("color.log","a+",encoding="utf-8")
-    fp.write(str(color_list)+'\n')
-    fp.close()
+    # fp=open("color.log","a+",encoding="utf-8")
+    # fp.write(str(color_list)+'\n')
+    # fp.close()
 
-    print(color_list)
+    # print(color_list)
     return color_list
 
 
@@ -90,11 +90,11 @@ def get_colors_max(image, box_list):
 
         color_list.append(maxColor)
 
-    fp=open("color.log","a+",encoding="utf-8")
+    fp=open("color_max.log","a+",encoding="utf-8")
     fp.write(str(color_list)+'\n')
     fp.close()
     print(color_list)
-
+    
     return color_list
 
 # 计算一个样本与数据集中所有样本的欧氏距离的平方
@@ -117,7 +117,7 @@ class Kmeans():
         则说明算法已经收敛
     """
 
-    def __init__(self, k=2, max_iterations=1000, varepsilon=0.0001, resetTimes=10):
+    def __init__(self, k=2, max_iterations=1000, varepsilon=0.0001, resetTimes=50):
         self.k = k
         self.max_iterations = max_iterations
         self.varepsilon = varepsilon
@@ -219,7 +219,7 @@ class Kmeans():
 
 def teamClassify_kmeans(image, box_list):
 
-    color_list = get_colors_max(image, box_list)
+    color_list = get_colors(image, box_list)
 
     res_list = []
 
