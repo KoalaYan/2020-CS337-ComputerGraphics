@@ -4,6 +4,31 @@ import edgeCorner
 import random
 
 
+def detect_color(left, top, width, height, image):
+    meanColor = [0, 0, 0]
+    count = 0
+    for i in range(left, left + width + 1, 1):
+        for j in range(top, top + height + 1, 1):
+            pixel = image[j][i]
+            R = int(pixel[0]); G = int(pixel[1]); B = int(pixel[2])
+            if (G - R > 5 and G - B > 5):
+                # 为绿色，跳过该像素点
+                continue
+            # 计入该点
+            meanColor[0] += R; meanColor[1] += G; meanColor[2] += B
+            count += 1
+    if count == 0:
+        print("Empty Box!!")
+    else:
+        meanColor[0] /= count
+        meanColor[1] /= count
+        meanColor[2] /= count
+    R = int(meanColor[0]); G = int(meanColor[1]); B = int(meanColor[2])
+    if R - G > 5 and R - B > 5:
+        return (255, 0, 0)
+    else:
+        return (0, 0, 255)
+
 def img_masked_rev(image):
     #converting into hsv image
     hsv = cv2.cvtColor(image,cv2.COLOR_BGR2HSV)
@@ -26,7 +51,9 @@ def get_colors(image, box_list):
         # location
         left = int(box[0]); top = int(box[1]); width = int(box[2]); height = int(box[3])
         # color average
+
         meanColor = [0, 0, 0]
+        # meanColor = [0, 0, 0, 0, 0]
         count = 0
         # for i in range(left, left + width, 1):
         #     for j in range(top, top + height, 1):
@@ -34,6 +61,7 @@ def get_colors(image, box_list):
             for j in range(int(top+height/3), min(int(top+height*2/3), image.shape[0]), 1):
                 pixel = image[j][i]
                 R = int(pixel[0]); G = int(pixel[1]); B = int(pixel[2])
+                # R = pixel[0]/255; G = pixel[1]/255; B = pixel[2]/255
                 if R or G or B:
                     meanColor[0] += R; meanColor[1] += G; meanColor[2] += B
                     count += 1
@@ -43,6 +71,8 @@ def get_colors(image, box_list):
             meanColor[0] /= count
             meanColor[1] /= count
             meanColor[2] /= count
+            # meanColor[3] = left/image.shape[1]
+            # meanColor[4] = top/image.shape[0]
             # 对RGB三维向量进行伸展操作，以提高聚类精度，但是可能会对人工阈值产生影响
             # meanColor[0] = meanColor[0] * 100000
             # meanColor[1] = meanColor[1] * 100000
@@ -219,6 +249,44 @@ class Kmeans():
 
 def teamClassify_kmeans(image, box_list):
 
+    # color_list = get_colors(image, box_list)
+    #
+    # res_list = []
+    #
+    # Clf = Kmeans(k=2)
+    # color_list = np.mat(color_list)
+    # y_pred = Clf.predict(color_list)
+    # # print(y_pred)
+    #
+    # # 每个聚类里的颜色是否已经被探知
+    # zero_is_detected = False
+    # one_is_detected = False
+    # two_is_detected = False
+    #
+    # for i in range(0, len(y_pred), 1):
+    #     box = box_list[i]
+    #
+    #     # add team label
+    #     if y_pred[i] == 0:
+    #         if not zero_is_detected:
+    #             zero_is_detected = True
+    #         box.append(0)
+    #         res_list.append(box)
+    #
+    #     elif y_pred[i] == 1:
+    #         if not one_is_detected:
+    #             one_is_detected = True
+    #         box.append(1)
+    #         res_list.append(box)
+    #
+    #     else:
+    #         if not two_is_detected:
+    #             two_is_detected = True
+    #         box.append(2)
+    #         res_list.append(box)
+    # return res_list
+
+
     color_list = get_colors(image, box_list)
 
     res_list = []
@@ -231,31 +299,54 @@ def teamClassify_kmeans(image, box_list):
     # 每个聚类里的颜色是否已经被探知
     zero_is_detected = False
     one_is_detected = False
-    two_is_detected = False
+    # two_is_detected = False
+    # 颜色
+    red = (255, 0, 0)
+    blue = (0, 0, 255)
+    # yellow = (0, 255, 255)
+    # 每个聚类的颜色（默认都为红）
+    zeroColor = red
+    oneColor = red
+    # twoColor = red
 
     for i in range(0, len(y_pred), 1):
         box = box_list[i]
+        left = int(box[0]); top = int(box[1]); width = int(box[2]); height = int(box[3])
 
-        # add team label
+        # 球员阵营绘制
         if y_pred[i] == 0:
-            if not zero_is_detected:
+            if not zero_is_detected and not one_is_detected:
+                zeroColor = detect_color(left, top, width, height, image)
+                if zeroColor == (255, 0, 0):
+                    zeroColor = 0
+                    oneColor = 1
+                else:
+                    zeroColor = 1
+                    oneColor = 0
                 zero_is_detected = True
-            box.append(0)
-            res_list.append(box)
-
-        elif y_pred[i] == 1:
-            if not one_is_detected:
                 one_is_detected = True
-            box.append(1)
-            res_list.append(box)
+            box.append(zeroColor)
+            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), zeroColor, 2)
+            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), red, 2)
 
-        else:
-            if not two_is_detected:
-                two_is_detected = True
-            box.append(2)
-            res_list.append(box)
+        if y_pred[i] == 1:
+            if not zero_is_detected and not one_is_detected:
+                oneColor = detect_color(left, top, width, height, image)
+                if oneColor == (255, 0, 0):
+                    zeroColor = 1
+                    oneColor = 0
+                else:
+                    zeroColor = 0
+                    oneColor = 1
+                zero_is_detected = True
+                one_is_detected = True
+            box.append(oneColor)
+            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), oneColor, 2)
+            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), blue, 2)
+
+        res_list.append(box)
+
     return res_list
-
 
 def teamClassify(image, box_list):
     # image, box_list = input_for_classify_team()

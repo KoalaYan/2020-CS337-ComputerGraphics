@@ -22,6 +22,9 @@ class DTracker:
         self.networkHeight = 416 # Height of network's input image
         self.vertex_lst = []
 
+        self.confront = 0 # Number of players confrontation
+        self.confrtThreshold = 5
+
         self.classes = None
         self.net = None
 
@@ -196,8 +199,8 @@ def dataLog(data_list, team_label, filename1, filename2):
 
     return rec_team1, rec_team2
 
-testFileName = "test.mp4"
-resultFileName = "team-1.mp4"
+testFileName = "1.mp4"
+resultFileName = "final-1.mp4"
 logFileName1 = "data_1.log"
 logFileName2 = "data_2.log"
 
@@ -275,21 +278,36 @@ if __name__ == "__main__":
 
         rec_team1, rec_team2 = dataLog(point_list, np.array(team_list,np.int)[:,4], logFileName1, logFileName2)
 
-        if DT.frameNumber % 25 != 0:
-            centroid1 = np.mean(rec_team1, axis=0)
-            centroid2 = np.mean(rec_team2, axis=0)
-            dist1 = np.sqrt(np.sum(np.square(centroid1-pre_cent1))) + np.sqrt(np.sum(np.square(centroid2-pre_cent2)))
-            dist2 = np.sqrt(np.sum(np.square(centroid1-pre_cent2))) + np.sqrt(np.sum(np.square(centroid2-pre_cent1)))
-            if dist1 > dist2:
-                rec_team1, rec_team2 = rec_team2, rec_team1
-                pre_cent1 = centroid2
-                pre_cent2 = centroid1
-            else:
-                pre_cent1 = centroid1
-                pre_cent2 = centroid2
-        else:
-            pre_cent1 = np.mean(rec_team1, axis=0)
-            pre_cent2 = np.mean(rec_team2, axis=0)
+        # if DT.frameNumber != 0:
+        #     centroid1 = np.mean(rec_team1, axis=0)
+        #     centroid2 = np.mean(rec_team2, axis=0)
+        #     dist1 = np.sqrt(np.sum(np.square(centroid1-pre_cent1))) + np.sqrt(np.sum(np.square(centroid2-pre_cent2)))
+        #     dist2 = np.sqrt(np.sum(np.square(centroid1-pre_cent2))) + np.sqrt(np.sum(np.square(centroid2-pre_cent1)))
+        #     if dist1 > dist2:
+        #         rec_team1, rec_team2 = rec_team2, rec_team1
+        #         pre_cent1 = centroid2
+        #         pre_cent2 = centroid1
+        #     else:
+        #         pre_cent1 = centroid1
+        #         pre_cent2 = centroid2
+        # else:
+        #     pre_cent1 = np.mean(rec_team1, axis=0)
+        #     pre_cent2 = np.mean(rec_team2, axis=0)
+
+        # Confront.
+        # if DT.frameNumber % 25 == 0:
+        #     for pl_1 in rec_team1:
+        #         for pl_2 in rec_team2:
+        #             dist = np.sqrt(np.sum(np.square(pl_1-pl_2)))
+        #             if dist < DT.confrtThreshold:
+        #                 DT.confront += 1
+
+
+        centroid1 = np.mean(rec_team1, axis=0)
+        centroid2 = np.mean(rec_team2, axis=0)
+        if centroid1[0] > centroid2[0]:
+            rec_team1, rec_team2 = rec_team2, rec_team1
+
 
         for poi in rec_team1:
             result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
