@@ -28,6 +28,9 @@ class DTracker:
         self.classes = None
         self.net = None
 
+        self.team_color_1 = (0,0,255)
+        self.team_color_2 = (255,0,0)
+
         classes_file = "./coco.names"
         model_config = "yolov4.cfg"
         model_weights = "yolov4.weights"
@@ -168,36 +171,23 @@ class DTracker:
         return boxes_list
 
 
-def dataLog(data_list, team_label, filename1, filename2):
-    rec_team1 = []
-    rec_team2 = []
-    if len(data_list) != len(team_label):
-        print("Error data log!")
-        return
+def dataLog(rec_team1, rec_team2, filename1, filename2):
     # indata = data_list
     fp1=open(filename1,"a+",encoding="utf-8")
     fp2=open(filename2,"a+",encoding="utf-8")
-    for idx in range(0, len(data_list)):
-        data = data_list[idx]
-        if team_label[idx] == 0:
-            rec_team1.append(data)
-            fp1.write(str(data[0])+','+str(data[1]))
-            # if idx != len(data_list) - 1:
-            fp1.write('|')
-        elif team_label[idx] == 1:
-            rec_team2.append(data)
-            fp2.write(str(data[0])+','+str(data[1]))
-            # if idx != len(data_list) - 1:
-            fp2.write('|')
-        else:
-            print("error log!")
+    for poi in rec_team1:
+        fp1.write(str(rec_team1[0])+','+str(rec_team1[1]))
+        fp1.write('|')
+
+    for poi in rec_team2:
+        fp2.write(str(rec_team2[0])+','+str(rec_team2[1]))
+        fp1.write('|')
 
     fp1.write('\n')
     fp1.close()
     fp2.write('\n')
     fp2.close()
 
-    return rec_team1, rec_team2
 
 testFileName = "1.mp4"
 resultFileName = "final-1.mp4"
@@ -274,25 +264,61 @@ if __name__ == "__main__":
         #     poi.append(team_list[idx][4])
         #     data_list.append(poi)
 
+        rec_team1 = []
+        rec_team2 = []
 
+        if DT.frameNumber != 1:
+            label_1 = team_list[0][4]
+            for clr in np.array(team_list)[:,4]:
+                if any(clr != label_1):
+                    label_2 = clr
+                    break
+            for idx in range(len(point_list)):
+                if all(team_list[idx][4] == label_1):
+                    rec_team1.append(point_list[idx])
+                else:
+                    rec_team2.append(point_list[idx])
 
-        rec_team1, rec_team2 = dataLog(point_list, np.array(team_list,np.int)[:,4], logFileName1, logFileName2)
+            centroid1 = np.mean(rec_team1, axis=0)
+            centroid2 = np.mean(rec_team2, axis=0)
+            dist1 = np.sqrt(np.sum(np.square(centroid1-pre_cent1))) + np.sqrt(np.sum(np.square(centroid2-pre_cent2)))
+            dist2 = np.sqrt(np.sum(np.square(centroid1-pre_cent2))) + np.sqrt(np.sum(np.square(centroid2-pre_cent1)))
+            if dist1 > dist2:
+                rec_team1, rec_team2 = rec_team2, rec_team1
+                pre_cent1 = centroid2
+                pre_cent2 = centroid1
+            else:
+                pre_cent1 = centroid1
+                pre_cent2 = centroid2
+        else:
+            label_1 = team_list[0][4]
+            # print(label_1)
+            DT.team_color_1 = label_1
+            # DT.team_color_1 = (label_1[0],label_1[1],label_1[2])
+            for clr in np.array(team_list)[:,4]:
+                if any(clr != label_1):
+                    label_2 = clr
+                    # print(label_2)
+                    DT.team_color_2 = label_2
+                    # DT.team_color_2 = (label_2[0],label_2[1],label_2[2])
+                    break
+            for idx in range(len(point_list)):
+                if all(team_list[idx][4] == label_1):
+                    rec_team1.append(point_list[idx])
+                else:
+                    rec_team2.append(point_list[idx])
 
-        # if DT.frameNumber != 0:
-        #     centroid1 = np.mean(rec_team1, axis=0)
-        #     centroid2 = np.mean(rec_team2, axis=0)
-        #     dist1 = np.sqrt(np.sum(np.square(centroid1-pre_cent1))) + np.sqrt(np.sum(np.square(centroid2-pre_cent2)))
-        #     dist2 = np.sqrt(np.sum(np.square(centroid1-pre_cent2))) + np.sqrt(np.sum(np.square(centroid2-pre_cent1)))
-        #     if dist1 > dist2:
-        #         rec_team1, rec_team2 = rec_team2, rec_team1
-        #         pre_cent1 = centroid2
-        #         pre_cent2 = centroid1
-        #     else:
-        #         pre_cent1 = centroid1
-        #         pre_cent2 = centroid2
-        # else:
-        #     pre_cent1 = np.mean(rec_team1, axis=0)
-        #     pre_cent2 = np.mean(rec_team2, axis=0)
+            pre_cent1 = np.mean(rec_team1, axis=0)
+            pre_cent2 = np.mean(rec_team2, axis=0)
+
+        # centroid1 = np.mean(rec_team1, axis=0)
+        # centroid2 = np.mean(rec_team2, axis=0)
+        # if centroid1[0] > centroid2[0]:
+        #     rec_team1, rec_team2 = rec_team2, rec_team1
+
+        dataLog(rec_team1, rec_team2, logFileName1, logFileName2)
+
+        # print(DT.team_color_1, DT.team_color_2)
 
         # Confront.
         # if DT.frameNumber % 25 == 0:
@@ -303,16 +329,13 @@ if __name__ == "__main__":
         #                 DT.confront += 1
 
 
-        centroid1 = np.mean(rec_team1, axis=0)
-        centroid2 = np.mean(rec_team2, axis=0)
-        if centroid1[0] > centroid2[0]:
-            rec_team1, rec_team2 = rec_team2, rec_team1
+
 
 
         for poi in rec_team1:
-            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (255, 0, 0), 3)
+            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (int(DT.team_color_1[2]),int(DT.team_color_1[1]),int(DT.team_color_1[0])), 3)
         for poi in rec_team2:
-            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (0, 0, 255), 3)
+            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (int(DT.team_color_2[2]),int(DT.team_color_2[1]),int(DT.team_color_2[0])), 3)
 
         # for idx in range(0,len(point_list)):
         #     # print(poi)

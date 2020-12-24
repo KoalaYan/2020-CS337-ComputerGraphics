@@ -4,13 +4,17 @@ import edgeCorner
 import random
 
 
-def detect_color(left, top, width, height, image):
+def detect_color(poi, image):
+    left = int(poi[0])
+    top = int(poi[1])
+    width = int(poi[2])
+    height = int(poi[3])
     meanColor = [0, 0, 0]
     count = 0
     for i in range(left, left + width + 1, 1):
         for j in range(top, top + height + 1, 1):
             pixel = image[j][i]
-            R = int(pixel[0]); G = int(pixel[1]); B = int(pixel[2])
+            B = int(pixel[0]); G = int(pixel[1]); R = int(pixel[2])
             if (G - R > 5 and G - B > 5):
                 # 为绿色，跳过该像素点
                 continue
@@ -24,10 +28,9 @@ def detect_color(left, top, width, height, image):
         meanColor[1] /= count
         meanColor[2] /= count
     R = int(meanColor[0]); G = int(meanColor[1]); B = int(meanColor[2])
-    if R - G > 5 and R - B > 5:
-        return (255, 0, 0)
-    else:
-        return (0, 0, 255)
+    return [R,G,B]
+
+
 
 def img_masked_rev(image):
     #converting into hsv image
@@ -42,7 +45,7 @@ def img_masked_rev(image):
 
 def get_colors(image, box_list):
     # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    # input is RGB image
+    # input is BGR image
     color_list = []
     image = edgeCorner.img_masked_rev(image)
 
@@ -60,7 +63,7 @@ def get_colors(image, box_list):
         for i in range(left, min(left + width, image.shape[1]), 1):
             for j in range(int(top+height/3), min(int(top+height*2/3), image.shape[0]), 1):
                 pixel = image[j][i]
-                R = int(pixel[0]); G = int(pixel[1]); B = int(pixel[2])
+                B = int(pixel[0]); G = int(pixel[1]); R = int(pixel[2])
                 # R = pixel[0]/255; G = pixel[1]/255; B = pixel[2]/255
                 if R or G or B:
                     meanColor[0] += R; meanColor[1] += G; meanColor[2] += B
@@ -84,7 +87,7 @@ def get_colors(image, box_list):
     # fp.write(str(color_list)+'\n')
     # fp.close()
 
-    # print(color_list)
+    print(color_list)
     return color_list
 
 
@@ -124,7 +127,7 @@ def get_colors_max(image, box_list):
     fp.write(str(color_list)+'\n')
     fp.close()
     print(color_list)
-    
+
     return color_list
 
 # 计算一个样本与数据集中所有样本的欧氏距离的平方
@@ -197,29 +200,30 @@ class Kmeans():
                 y_pred[sample_i] = cluster_i
         return y_pred
 
-    def get_cluster_labels_new(self, centroids, clusters, X):
-        dist_list = []
-        for centroid in centroids:
-            dist = np.sqrt(np.sum(np.square(centroid)))
-            dist_list.append(dist)
-        # print(dist_list)
-        copy = dist_list.copy()
-        copy.sort()
-        idx = np.zeros(len(centroids))
-        for j in range(len(centroids)):
-            for i in range(len(centroids)):
-                if dist_list[j] == copy[i]:
-                    idx[j] = i
+    def get_cluster_labels_new(self, clusters, X, colors):
+        # dist_list = []
+        # for centroid in centroids:
+        #     dist = np.sqrt(np.sum(np.square(centroid)))
+        #     dist_list.append(dist)
+        # # print(dist_list)
+        # copy = dist_list.copy()
+        # copy.sort()
+        # idx = np.zeros(len(centroids))
+        # for j in range(len(centroids)):
+        #     for i in range(len(centroids)):
+        #         if dist_list[j] == copy[i]:
+        #             idx[j] = i
 
-        y_pred = np.zeros(np.shape(X)[0])
+
+        y_pred = np.zeros(np.shape(X),dtype=np.int)
         for cluster_i, cluster in enumerate(clusters):
             # print("cluster",cluster_i,"number:",len(cluster))
             for sample_i in cluster:
-                y_pred[sample_i] = idx[cluster_i]
+                y_pred[sample_i] = colors[cluster_i]
         return y_pred
 
     # 对整个数据集X进行Kmeans聚类，返回其聚类的标签
-    def predict(self, X):
+    def predict(self, X, boxes_list, image):
         times = 0
         resultGood = False
         while(times<self.resetTimes) and not resultGood:
@@ -244,7 +248,12 @@ class Kmeans():
             if(abs(len(clusters[0])-len(clusters[1])) < 4):
                 resultGood = True
 
-        return self.get_cluster_labels_new(centroids, clusters, X)
+        poi_1 = boxes_list[clusters[0][0]]
+        poi_2 = boxes_list[clusters[1][0]]
+        colors = [detect_color(poi_1,image), detect_color(poi_2,image)]
+        print(colors)
+
+        return self.get_cluster_labels_new(clusters, X, colors)
 
 
 def teamClassify_kmeans(image, box_list):
@@ -293,7 +302,7 @@ def teamClassify_kmeans(image, box_list):
 
     Clf = Kmeans(k=2)
     color_list = np.mat(color_list)
-    y_pred = Clf.predict(color_list)
+    y_pred = Clf.predict(color_list, box_list, image)
     # print(y_pred)
 
     # 每个聚类里的颜色是否已经被探知
@@ -311,38 +320,40 @@ def teamClassify_kmeans(image, box_list):
 
     for i in range(0, len(y_pred), 1):
         box = box_list[i]
-        left = int(box[0]); top = int(box[1]); width = int(box[2]); height = int(box[3])
 
-        # 球员阵营绘制
-        if y_pred[i] == 0:
-            if not zero_is_detected and not one_is_detected:
-                zeroColor = detect_color(left, top, width, height, image)
-                if zeroColor == (255, 0, 0):
-                    zeroColor = 0
-                    oneColor = 1
-                else:
-                    zeroColor = 1
-                    oneColor = 0
-                zero_is_detected = True
-                one_is_detected = True
-            box.append(zeroColor)
-            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), zeroColor, 2)
-            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), red, 2)
-
-        if y_pred[i] == 1:
-            if not zero_is_detected and not one_is_detected:
-                oneColor = detect_color(left, top, width, height, image)
-                if oneColor == (255, 0, 0):
-                    zeroColor = 1
-                    oneColor = 0
-                else:
-                    zeroColor = 0
-                    oneColor = 1
-                zero_is_detected = True
-                one_is_detected = True
-            box.append(oneColor)
-            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), oneColor, 2)
-            #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), blue, 2)
+        box.append(y_pred[i])
+        # left = int(box[0]); top = int(box[1]); width = int(box[2]); height = int(box[3])
+        #
+        # # 球员阵营绘制
+        # if y_pred[i] == 0:
+        #     if not zero_is_detected and not one_is_detected:
+        #         zeroColor = detect_color(left, top, width, height, image)
+        #         if zeroColor == (255, 0, 0):
+        #             zeroColor = 0
+        #             oneColor = 1
+        #         else:
+        #             zeroColor = 1
+        #             oneColor = 0
+        #         zero_is_detected = True
+        #         one_is_detected = True
+        #     box.append(zeroColor)
+        #     #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), zeroColor, 2)
+        #     #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), red, 2)
+        #
+        # if y_pred[i] == 1:
+        #     if not zero_is_detected and not one_is_detected:
+        #         oneColor = detect_color(left, top, width, height, image)
+        #         if oneColor == (255, 0, 0):
+        #             zeroColor = 1
+        #             oneColor = 0
+        #         else:
+        #             zeroColor = 0
+        #             oneColor = 1
+        #         zero_is_detected = True
+        #         one_is_detected = True
+        #     box.append(oneColor)
+        #     #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), oneColor, 2)
+        #     #draw_1 = cv2.rectangle(image, (left, top), (left + width, top + height), blue, 2)
 
         res_list.append(box)
 
