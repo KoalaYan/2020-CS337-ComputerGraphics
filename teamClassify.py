@@ -87,7 +87,7 @@ def get_colors(image, box_list):
     # fp.write(str(color_list)+'\n')
     # fp.close()
 
-    print(color_list)
+    # print(color_list)
     return color_list
 
 
@@ -126,7 +126,7 @@ def get_colors_max(image, box_list):
     fp=open("color_max.log","a+",encoding="utf-8")
     fp.write(str(color_list)+'\n')
     fp.close()
-    print(color_list)
+    # print(color_list)
 
     return color_list
 
@@ -251,7 +251,7 @@ class Kmeans():
         poi_1 = boxes_list[clusters[0][0]]
         poi_2 = boxes_list[clusters[1][0]]
         colors = [detect_color(poi_1,image), detect_color(poi_2,image)]
-        print(colors)
+        # print(colors)
 
         return self.get_cluster_labels_new(clusters, X, colors)
 

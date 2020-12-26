@@ -190,7 +190,7 @@ def dataLog(rec_team1, rec_team2, filename1, filename2):
 
 
 testFileName = "1.mp4"
-resultFileName = "final-1.mp4"
+resultFileName = "pre.mp4"
 logFileName1 = "data_1.log"
 logFileName2 = "data_2.log"
 
@@ -236,13 +236,16 @@ if __name__ == "__main__":
     pre_cent2 = [0,0]
     team_list = []
 
+    pre_idx_1 = []
+    pre_idx_2 = []
+
     while flag:
         player_boxes = DT.detect_tracker(img)
         print("Current Frame:", DT.frameNumber)
         # if (DT.frameNumber % 5 == 0) or (len(team_list) == 0):
         team_list = teamClassify.teamClassify_kmeans(img, player_boxes)
         # print("Number:", len(player_boxes))
-        result = img
+        result = img.copy()
 
         point_list = []
 
@@ -264,33 +267,66 @@ if __name__ == "__main__":
         #     poi.append(team_list[idx][4])
         #     data_list.append(poi)
 
+
+
         rec_team1 = []
         rec_team2 = []
+        show_team1 = []
+        show_team2 = []
 
         if DT.frameNumber != 1:
-            label_1 = team_list[0][4]
-            for clr in np.array(team_list)[:,4]:
-                if any(clr != label_1):
-                    label_2 = clr
-                    break
-            for idx in range(len(point_list)):
-                if all(team_list[idx][4] == label_1):
+            if DT.frameNumber % 25 != 1:
+                for idx in pre_idx_1:
                     rec_team1.append(point_list[idx])
-                else:
-                    rec_team2.append(point_list[idx])
+                    show_team1.append(player_boxes[idx])
+                for idx in pre_idx_2:
+                    rec_team2.append((point_list[idx]))
+                    show_team2.append(player_boxes[idx])
 
-            centroid1 = np.mean(rec_team1, axis=0)
-            centroid2 = np.mean(rec_team2, axis=0)
-            dist1 = np.sqrt(np.sum(np.square(centroid1-pre_cent1))) + np.sqrt(np.sum(np.square(centroid2-pre_cent2)))
-            dist2 = np.sqrt(np.sum(np.square(centroid1-pre_cent2))) + np.sqrt(np.sum(np.square(centroid2-pre_cent1)))
-            if dist1 > dist2:
-                rec_team1, rec_team2 = rec_team2, rec_team1
-                pre_cent1 = centroid2
-                pre_cent2 = centroid1
-            else:
+                centroid1 = np.mean(rec_team1, axis=0)
+                centroid2 = np.mean(rec_team2, axis=0)
                 pre_cent1 = centroid1
                 pre_cent2 = centroid2
+                # print("location:", centroid1, centroid2)
+
+            else:
+                pre_idx_1 = []
+                pre_idx_2 = []
+                label_1 = team_list[0][4]
+                for clr in np.array(team_list)[:,4]:
+                    if any(clr != label_1):
+                        label_2 = clr
+                        break
+                for idx in range(len(point_list)):
+                    if all(team_list[idx][4] == label_1):
+                        rec_team1.append(point_list[idx])
+                        show_team1.append(player_boxes[idx])
+                        pre_idx_1.append(idx)
+                    else:
+                        rec_team2.append(point_list[idx])
+                        show_team2.append(player_boxes[idx])
+                        pre_idx_2.append(idx)
+                centroid1 = np.mean(rec_team1, axis=0)
+                centroid2 = np.mean(rec_team2, axis=0)
+                dist1 = np.sqrt(np.sum(np.square(centroid1-pre_cent1))) + np.sqrt(np.sum(np.square(centroid2-pre_cent2)))
+                dist2 = np.sqrt(np.sum(np.square(centroid1-pre_cent2))) + np.sqrt(np.sum(np.square(centroid2-pre_cent1)))
+                # print("location:", centroid1, centroid2)
+                # print("distance:", dist1, dist2)
+                if dist1 > dist2:
+                    rec_team1, rec_team2 = rec_team2, rec_team1
+                    show_team1, show_team2 = show_team2, show_team1
+                    pre_idx_1, pre_idx_2 = pre_idx_2, pre_idx_1
+                    pre_cent1 = centroid2
+                    pre_cent2 = centroid1
+                else:
+                    pre_cent1 = centroid1
+                    pre_cent2 = centroid2
+
+                print(pre_idx_1, pre_idx_2)
         else:
+            pre_idx_1 = []
+            pre_idx_2 = []
+
             label_1 = team_list[0][4]
             # print(label_1)
             DT.team_color_1 = label_1
@@ -305,8 +341,14 @@ if __name__ == "__main__":
             for idx in range(len(point_list)):
                 if all(team_list[idx][4] == label_1):
                     rec_team1.append(point_list[idx])
+                    show_team1.append(player_boxes[idx])
+                    pre_idx_1.append(idx)
                 else:
                     rec_team2.append(point_list[idx])
+                    show_team2.append(player_boxes[idx])
+                    pre_idx_2.append(idx)
+
+            print(pre_idx_1, pre_idx_2)
 
             pre_cent1 = np.mean(rec_team1, axis=0)
             pre_cent2 = np.mean(rec_team2, axis=0)
@@ -328,14 +370,25 @@ if __name__ == "__main__":
         #             if dist < DT.confrtThreshold:
         #                 DT.confront += 1
 
+        for box in show_team1:
+            left = int(box[0])
+            top = int(box[1])
+            width = int(box[2])
+            height = int(box[3])
+            img = cv2.rectangle(img, (left, top), (left + width, top + height), (int(DT.team_color_1[2]),int(DT.team_color_1[1]),int(DT.team_color_1[0])), 2)
+        for box in show_team2:
+            left = int(box[0])
+            top = int(box[1])
+            width = int(box[2])
+            height = int(box[3])
+            img = cv2.rectangle(img, (left, top), (left + width, top + height), (int(DT.team_color_2[2]),int(DT.team_color_2[1]),int(DT.team_color_2[0])), 2)
 
 
 
-
-        for poi in rec_team1:
-            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (int(DT.team_color_1[2]),int(DT.team_color_1[1]),int(DT.team_color_1[0])), 3)
-        for poi in rec_team2:
-            result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (int(DT.team_color_2[2]),int(DT.team_color_2[1]),int(DT.team_color_2[0])), 3)
+        # for poi in rec_team1:
+        #     result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (int(DT.team_color_1[2]),int(DT.team_color_1[1]),int(DT.team_color_1[0])), 3)
+        # for poi in rec_team2:
+        #     result = cv2.rectangle(result, (poi[0], poi[1]), (poi[0]+5, poi[1]+5), (int(DT.team_color_2[2]),int(DT.team_color_2[1]),int(DT.team_color_2[0])), 3)
 
         # for idx in range(0,len(point_list)):
         #     # print(poi)
@@ -357,8 +410,8 @@ if __name__ == "__main__":
         # for poi in point_list:
         #     result = cv2.circle(result, (poi[0],poi[1]), point_size, point_color, thickness)
 
-        out.write(np.uint8(result))
-        cv2.imshow('result', result)
+        out.write(np.uint8(img))
+        cv2.imshow('result', img)
         # cv2.imwrite('res-test.jpg', result)
         # if DT.frameNumber > 10:
         #     break
