@@ -15,3 +15,8 @@ goturn.caffemodel
 goturn.prototxt
 __pycache__
 *.log
+scatter.py
+teamClassify.py
+detect.py
+field.py
+shape.py
