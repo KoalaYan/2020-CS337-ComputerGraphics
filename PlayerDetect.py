@@ -151,7 +151,7 @@ class DTracker:
 
     def detect_tracker(self, frame):
         is_detecting = False
-        if(self.frameNumber % 25 == 0) or (not self.isTracking):
+        if(self.frameNumber % 125 == 0) or (not self.isTracking):
             boxes_list = self.detect(frame)
             if len(boxes_list) != 0:
                 is_detecting = True
@@ -176,12 +176,12 @@ def dataLog(rec_team1, rec_team2, filename1, filename2):
     fp1=open(filename1,"a+",encoding="utf-8")
     fp2=open(filename2,"a+",encoding="utf-8")
     for poi in rec_team1:
-        fp1.write(str(rec_team1[0])+','+str(rec_team1[1]))
+        fp1.write(str(poi[0])+','+str(poi[1]))
         fp1.write('|')
 
     for poi in rec_team2:
-        fp2.write(str(rec_team2[0])+','+str(rec_team2[1]))
-        fp1.write('|')
+        fp2.write(str(poi[0])+','+str(poi[1]))
+        fp2.write('|')
 
     fp1.write('\n')
     fp1.close()
@@ -275,7 +275,11 @@ if __name__ == "__main__":
         show_team2 = []
 
         if DT.frameNumber != 1:
-            if DT.frameNumber % 25 != 1:
+            if DT.frameNumber % 125 != 1:
+                if len(point_list) != len(pre_idx_1) + len(pre_idx_2):
+                    flag, img = cap.read()
+                    DT.frameNumber += 124 - ((DT.frameNumber-1) % 125)
+                    continue
                 for idx in pre_idx_1:
                     rec_team1.append(point_list[idx])
                     show_team1.append(player_boxes[idx])
