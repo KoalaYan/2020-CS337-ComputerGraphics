@@ -1,4 +1,5 @@
-# 2020-CS337-ComputerGraphics
+# CS337-Project
+**2020 SJTU CS337 Computer Graphics course project**
 ## Our goals:
 1. Detecting players
 2. Field Edge Detection
